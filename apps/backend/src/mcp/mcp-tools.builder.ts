@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   ListToolsRequestSchema,
@@ -232,7 +232,7 @@ export class McpToolsBuilder {
 
   build(actor: SessionUser): McpServer {
     const server = new McpServer(
-      { name: 'orderrestro', version: '1.0.0' },
+      { name: 'astrikcoders', version: '1.0.0' },
       { capabilities: { tools: {} } },
     );
     const tools = this.toolDefs(actor);

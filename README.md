@@ -1,38 +1,40 @@
 <div align="center">
 
-<img src="apps/web/public/brand-lockup.png" alt="Nodedr OrderRestro" width="520">
+<img src="apps/web/public/astrik-logo.png" alt="Astrikcoders POS" width="120">
 
-<img src="docs/orderrestro-cover.jpg" alt="Illustrative evening scene in an independent restaurant" width="100%">
+# Astrikcoders - Restaurant Management SaaS
 
-**Open-source, self-hosted restaurant POS & management system** — billing
-with **UPI QR payments**, tables, kitchen display (KDS), reservations,
-inventory, **staff attendance & payroll**, accounting, reports, CRM/loyalty
-and multi-branch control. Offline-first, runs on your own server, no
-subscription. Not a retail POS bolted onto a restaurant; purpose-built for
-dine-in, takeaway, delivery and kitchen operations.
+**Multi-tenant restaurant management & POS platform** — Point of Sale (Dine-in, Takeaway, Delivery),
+table management & interactive floor plans, Kitchen Display System (KDS), online order dispatch,
+customer CRM with phone lookup & loyalty points, inventory management, staff roles, and
+Super Admin multi-tenant subscription tier controls.
 
+[![Ubuntu VPS Deploy](https://img.shields.io/badge/Deploy-1--Click%20Ubuntu%20VPS-success?logo=ubuntu)](./DEPLOYMENT.md)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white)](package.json)
-[![pnpm](https://img.shields.io/badge/pnpm-workspaces-F69220?logo=pnpm&logoColor=white)](pnpm-workspace.yaml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](apps/web/tsconfig.json)
 [![NestJS](https://img.shields.io/badge/backend-NestJS-E0234E?logo=nestjs&logoColor=white)](apps/backend)
 [![Next.js](https://img.shields.io/badge/frontend-Next.js-000000?logo=next.js&logoColor=white)](apps/web)
-[![CasaOS / ZimaOS](https://img.shields.io/badge/CasaOS%20%2F%20ZimaOS-one--click%20app-1F6FEB)](casaos/README.md)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](./ROADMAP.md)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 
-Developed by [NodeDR Infotech Private Limited](https://www.nodedr.com/)
+**[🚀 1-Click VPS Deployment Guide](./DEPLOYMENT.md)** ·
+**[📖 Features Checklist](./FEATURE-CHECKLIST.md)** ·
+**[🏗️ Architecture](./ARCHITECTURE.md)**
 
-**[Try OrderRestro](https://orderrestro.nodedr.com/)** · **[Case study](https://www.raktimranjit.com/projects/orderrestro)** · **[Maintainer: Raktim Ranjit](https://www.raktimranjit.com/)**
+</div>
 
-<p align="center">
-  <img src="docs/assets/hero-animated.svg" alt="Nodedr OrderRestro: animated overview with an illustrative sample screen" width="100%">
-</p>
+---
 
+## ⚡ 1-Click VPS Fast Install (Ubuntu / Hostinger)
 
-[Quick Start](#quick-start) ·
-[How to use](#how-to-use-orderrestro) ·
-[Full tutorial](./TUTORIAL.md) ·
+Deploy the entire stack (PostgreSQL 16, NestJS Backend, Next.js Frontend, automated SSL) with one command on any Ubuntu VPS:
+
+```bash
+git clone https://github.com/Arnab-34/saas-resturant-management-system.git /opt/astrikcoders && cd /opt/astrikcoders && chmod +x deploy.sh && sudo ./deploy.sh
+```
+
+👉 See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for full configuration, domain pointing, and Super Admin credentials guide.
+
+---
 [Features](#features) ·
 [Screenshots](#screenshots) ·
 [Docs](#documentation) ·

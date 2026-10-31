@@ -1,8 +1,9 @@
 "use client";
 
 import type { TableStatusDto } from "@nodedr-restaurant/types";
-import { Users } from "lucide-react";
+import { Bike, ShoppingBag, Users } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ElapsedTimer } from "@/components/tables/elapsed-timer";
 import { TableShapeIcon } from "@/components/tables/table-shape-icon";
 import { ResponsiveTabs } from "@/components/ui/nav-picker";
@@ -35,6 +36,8 @@ const STATUS_LABEL: Record<TableStatusDto, string> = {
 export function PosTablePicker({
   floors,
   onSelect,
+  onSelectTakeaway,
+  onSelectDelivery,
   isLoading = false,
   error = null,
   onRetry,
@@ -42,6 +45,8 @@ export function PosTablePicker({
 }: {
   floors: Floor[];
   onSelect: (table: RestaurantTable) => void;
+  onSelectTakeaway?: () => void;
+  onSelectDelivery?: () => void;
   isLoading?: boolean;
   /** The floor request failed: say so, never show it as "no tables". */
   error?: unknown;
@@ -73,6 +78,39 @@ export function PosTablePicker({
 
   return (
     <div className="flex h-full flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Dining Tables (Dine-in)</h2>
+          <p className="text-xs text-muted-foreground">Select a table to seat guests, or switch directly to takeaway or delivery:</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {onSelectTakeaway && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onSelectTakeaway}
+              className="flex items-center gap-1.5 font-medium hover:border-primary hover:text-primary"
+            >
+              <ShoppingBag className="h-4 w-4 text-primary" />
+              Quick Takeaway
+            </Button>
+          )}
+          {onSelectDelivery && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onSelectDelivery}
+              className="flex items-center gap-1.5 font-medium hover:border-primary hover:text-primary"
+            >
+              <Bike className="h-4 w-4 text-primary" />
+              Delivery Order
+            </Button>
+          )}
+        </div>
+      </div>
+
       {floors.length > 1 && (
         <ResponsiveTabs
           label="Floor"

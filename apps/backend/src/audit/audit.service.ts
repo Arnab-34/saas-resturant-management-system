@@ -5,6 +5,9 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export interface RecordAuditLogInput {
   userId?: string | null;
+  /** Denormalized restaurantId — always pass this for tenant-scoped events.
+   *  Null / omitted = platform-level event (e.g. super-admin actions). */
+  restaurantId?: string | null;
   action: string;
   entity: string;
   entityId?: string | null;
@@ -29,13 +32,12 @@ export interface RecordAuditLogInput {
 // `AuditService` into its service, and call `.record()` once the mutation
 // has actually committed.
 //
-// Known limitation: `AuditLog.userId` is nullable (`onDelete: SetNull` on
-// the `User` relation), and restaurant-scoping for `list()`/`listEntities()`
-// below is derived via the `user.restaurantId` join (AuditLog itself has no
-// `restaurantId` column). An entry whose actor user has since been deleted
-// becomes unscoped and will no longer surface in any restaurant's audit log
-// view. Acceptable for this first pass; revisit if that becomes a real
-// problem (e.g. by denormalizing `restaurantId` onto `AuditLog` directly).
+// SaaS upgrade: `restaurantId` is now a first-class column on `AuditLog`
+// (added in Phase 1 migration). `list()` and `listEntities()` now filter
+// directly on `restaurantId` instead of the indirect `user.restaurantId`
+// join, which fixes the known limitation where entries whose actor user had
+// been deleted became invisible. Pass `restaurantId: null` for platform-level
+// super-admin events that should not appear in any tenant's audit log view.
 @Injectable()
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
@@ -44,6 +46,7 @@ export class AuditService {
     await this.prisma.auditLog.create({
       data: {
         userId: input.userId ?? null,
+        restaurantId: input.restaurantId ?? null,
         action: input.action,
         entity: input.entity,
         entityId: input.entityId ?? null,
@@ -54,8 +57,12 @@ export class AuditService {
 
   async list(restaurantId: string, query: AuditLogListQueryDto) {
     const { entity, action, userId, from, to, page, pageSize } = query;
+
+    // Use the denormalized restaurantId column directly — entries remain
+    // visible even if the acting user has since been deleted.
     const where: Prisma.AuditLogWhereInput = {
-      user: { restaurantId, ...(userId ? { id: userId } : {}) },
+      restaurantId,
+      ...(userId ? { userId } : {}),
       ...(entity ? { entity } : {}),
       ...(action ? { action } : {}),
       ...(from || to
@@ -95,7 +102,7 @@ export class AuditService {
   // pattern).
   async listEntities(restaurantId: string): Promise<string[]> {
     const rows = await this.prisma.auditLog.findMany({
-      where: { user: { restaurantId } },
+      where: { restaurantId },
       distinct: ['entity'],
       select: { entity: true },
       orderBy: { entity: 'asc' },

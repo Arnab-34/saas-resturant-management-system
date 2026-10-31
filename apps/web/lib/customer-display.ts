@@ -1,4 +1,4 @@
-// Mirrors the POS cart to a second screen (a customer-facing display) open in
+﻿// Mirrors the POS cart to a second screen (a customer-facing display) open in
 // another window of the same browser. BroadcastChannel never leaves the
 // machine, so no server, account or network is involved.
 
@@ -14,7 +14,7 @@ export type DisplayState =
   | { kind: "upi"; total: number; uri: string; payee: string }
   | { kind: "paid"; total: number; method?: string };
 
-const CHANNEL = "orderrestro-customer-display";
+const CHANNEL = "astrikcoders-customer-display";
 
 export function publishDisplay(state: DisplayState) {
   if (typeof BroadcastChannel === "undefined") return;

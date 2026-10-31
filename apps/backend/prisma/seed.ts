@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import {
   DEFAULT_ROLE_PERMISSIONS,
@@ -46,7 +46,7 @@ async function main() {
     update: {},
     create: {
       id: 'demo-restaurant',
-      name: 'Nodedr Bistro (Demo)',
+      name: 'Astrik Bistro (Demo)',
       currency: 'INR',
     },
   });

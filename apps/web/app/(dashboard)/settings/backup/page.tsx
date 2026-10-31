@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import { PermissionGuard } from "@/components/common/permission-guard";
 
 import { useState } from "react";
 import { toast } from "sonner";
@@ -63,7 +64,7 @@ const EMPTY_CONFIG_FORM: ConfigFormState = {
   retainCount: "2",
 };
 
-export default function BackupPage() {
+function BackupPageInner() {
   const { data: status, isLoading: statusLoading } = useBackupStatus();
   const { data: backups, isLoading: backupsLoading } = useBackups();
   const setConfig = useSetBackupConfig();
@@ -433,5 +434,13 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
+  );
+}
+
+export default function BackupPage() {
+  return (
+    <PermissionGuard permission="backup.manage">
+      <BackupPageInner />
+    </PermissionGuard>
   );
 }

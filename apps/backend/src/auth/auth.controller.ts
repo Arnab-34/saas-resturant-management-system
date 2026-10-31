@@ -1,6 +1,7 @@
-import {
+﻿import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Post,
@@ -58,6 +59,14 @@ export class AuthController {
     @Body() body: unknown,
     @Res({ passthrough: true }) res: Response,
   ) {
+    // SaaS mode: public self-registration is disabled. Tenants are provisioned
+    // exclusively by the super admin. Return a clear message so developers
+    // don't waste time debugging a missing route.
+    if (process.env.SAAS_MODE === 'true') {
+      throw new ForbiddenException(
+        'Self-registration is disabled. Contact the platform administrator to get an account.',
+      );
+    }
     const { token, user } = await this.authService.register(body as never);
     this.setSessionCookie(res, token);
     return { user };
@@ -166,6 +175,46 @@ export class AuthController {
     return { isSetup };
   }
 
+
+  // ---------------------------------------------------------------------------
+  // SaaS Onboarding — invitation token setup (Phase 3)
+  // ---------------------------------------------------------------------------
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Get('invitation/:token')
+  getInvitation(@Param('token') token: string) {
+    return this.authService.getInvitation(token);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('invitation/:token/setup')
+  async setupTenantOwner(
+    @Param('token') token: string,
+    @Body() body: { password: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { token: sessionToken, user } = await this.authService.setupTenantOwner(
+      token,
+      body.password,
+    );
+    this.setSessionCookie(res, sessionToken);
+    return { user };
+  }
+
+  /** Exchange a 15-min impersonation token (issued by super admin) for a
+   *  real tenant session cookie. Opens in a new tab from the super admin panel. */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('impersonate')
+  async impersonate(
+    @Body() body: { token: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { token: sessionToken, user } = await this.authService.exchangeImpersonationToken(
+      body.token,
+    );
+    this.setSessionCookie(res, sessionToken);
+    return { user };
+  }
   private setSessionCookie(res: Response, token: string) {
     res.cookie(SESSION_COOKIE, token, {
       httpOnly: true,

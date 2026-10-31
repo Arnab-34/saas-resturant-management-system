@@ -1,0 +1,5 @@
+# Enforce LF on shell scripts and Linux configuration files
+*.sh text eol=lf
+*.bash text eol=lf
+Dockerfile* text eol=lf
+.env.example text eol=lf

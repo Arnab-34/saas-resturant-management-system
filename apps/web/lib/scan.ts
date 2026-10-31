@@ -1,11 +1,11 @@
-// Normalizes what a USB-HID "keyboard wedge" barcode/QR scanner types into a
+﻿// Normalizes what a USB-HID "keyboard wedge" barcode/QR scanner types into a
 // field. A wedge scanner is just a keyboard that types the payload and then
 // Enter, so everything arrives as plain text, possibly with a stray prefix,
 // suffix or whitespace. Only formats this app actually produces are
 // recognised; anything else is rejected rather than guessed at.
 //
 // Known formats:
-//   - order ticket QR (printed on the kiosk ticket):  orderrestro:order:<orderNumber>
+//   - order ticket QR (printed on the kiosk ticket):  astrikcoders:order:<orderNumber>
 //   - a bare order number typed/scanned as text:      20261017-0001   or  TA-DEMO-0001
 //   - the table QR URL:                               https://host/order/<32-hex qrToken>
 
@@ -14,7 +14,7 @@ export type ScanResult =
   | { kind: "table"; qrToken: string }
   | { kind: "invalid"; reason: "empty" | "unrecognized" };
 
-export const ORDER_QR_PREFIX = "orderrestro:order:";
+export const ORDER_QR_PREFIX = "astrikcoders:order:";
 const ORDER_NUMBER = /^[A-Z0-9]{1,12}(?:-[A-Z0-9]{1,12}){1,3}$/;
 const TABLE_URL = /\/order\/([a-f0-9]{32})\/?$/i;
 
@@ -28,8 +28,15 @@ export function normalizeScan(raw: string): ScanResult {
   if (!text) return { kind: "invalid", reason: "empty" };
   if (text.length > 200) return { kind: "invalid", reason: "unrecognized" };
 
-  if (text.toLowerCase().startsWith(ORDER_QR_PREFIX)) {
-    const number = text.slice(ORDER_QR_PREFIX.length).trim().toUpperCase();
+  const lower = text.toLowerCase();
+  const prefix = lower.startsWith(ORDER_QR_PREFIX)
+    ? ORDER_QR_PREFIX
+    : lower.startsWith("orderrestro:order:")
+      ? "orderrestro:order:"
+      : null;
+
+  if (prefix) {
+    const number = text.slice(prefix.length).trim().toUpperCase();
     return ORDER_NUMBER.test(number)
       ? { kind: "order", orderNumber: number }
       : { kind: "invalid", reason: "unrecognized" };

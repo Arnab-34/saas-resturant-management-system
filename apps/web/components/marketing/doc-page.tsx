@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/layout/logo";
 
@@ -17,7 +17,7 @@ export function DocPage({
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Logo size={26} />
-            <span className="text-sm font-semibold text-foreground">OrderRestro</span>
+            <span className="text-sm font-semibold text-foreground">Astrikcoders POS</span>
           </Link>
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
             &larr; Back to home

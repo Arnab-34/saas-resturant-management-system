@@ -1,9 +1,9 @@
 {
-  "name": "nodedr-orderrestro",
+  "name": "astrikcoders-restaurant-saas",
   "private": true,
   "version": "0.1.0",
-  "description": "Nodedr OrderRestro — offline-first Restaurant Management System",
-  "author": "Raktim Ranjit <mail@raktimranjit.com> (https://github.com/Raktim94)",
+  "description": "Astrikcoders — Multi-Tenant Restaurant Management SaaS Platform",
+  "author": "Astrikcoders <contact@astrikcoders.com> (https://astrikcoders.com)",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
@@ -12,7 +12,7 @@
   "bugs": {
     "url": "https://github.com/Raktim94/nodedr-restaurant-pos/issues"
   },
-  "homepage": "https://orderrestro.nodedr.com/",
+  "homepage": "https://astrikcoders.com/",
   "keywords": [
     "restaurant-management",
     "restaurant-pos",

@@ -79,6 +79,24 @@ export const STAFF_ROLES = [
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
+// ---------------------------------------------------------------------------
+// SaaS-mode permission boundaries
+// ---------------------------------------------------------------------------
+
+// Permissions that belong exclusively to the platform super admin in SaaS
+// mode. When SAAS_MODE=true these are never granted to any tenant role, even
+// OWNER. Self-hosted deployments are unaffected (all keys remain available).
+export const SAAS_FORBIDDEN_PERMISSIONS = [
+  "backup.manage", // backup/restore affects the entire shared DB instance
+  "system.update", // updater sidecar updates the whole deployment
+] as const satisfies PermissionKey[];
+
+// Use this instead of PERMISSIONS.map(p => p.key) when seeding OWNER /
+// ADMINISTRATOR roles in SaaS mode. Produces a stable filtered array.
+export const SAAS_OWNER_PERMISSIONS: PermissionKey[] = PERMISSIONS
+  .map((p) => p.key)
+  .filter((k): k is PermissionKey => !(SAAS_FORBIDDEN_PERMISSIONS as readonly string[]).includes(k));
+
 // Default permission bundles per role — seeded on first boot, but every
 // permission remains individually toggleable afterward (stored per-role in
 // the DB, this is just the initial grant set).

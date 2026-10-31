@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -68,6 +68,16 @@ export class OrdersService {
     private readonly verifactu: VerifactuService,
   ) {}
 
+
+  // ─── SaaS helper ──────────────────────────────────────────────────────────
+  /** Returns the restaurantId for a branch (cached per request is fine here). */
+  private async getRestaurantId(branchId: string): Promise<string> {
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: branchId },
+      select: { restaurantId: true },
+    });
+    return branch?.restaurantId ?? 'unknown';
+  }
   async listOpen(branchId: string, tableId?: string) {
     return this.prisma.order.findMany({
       where: { branchId, status: 'OPEN', ...(tableId ? { tableId } : {}) },
@@ -88,6 +98,7 @@ export class OrdersService {
       },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     return order;
   }
 
@@ -119,6 +130,7 @@ export class OrdersService {
       },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     return order;
   }
 
@@ -454,6 +466,7 @@ export class OrdersService {
       include: { items: true, payments: { select: { id: true } } },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     this.assertNoPayments(order);
     await this.validateModifierSelections(
       branchId,
@@ -599,6 +612,7 @@ export class OrdersService {
       include: { items: true },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     if (order.status !== 'OPEN' || order.acceptance !== 'PENDING') {
       throw new ConflictException(
         order.acceptance === 'ACCEPTED'
@@ -634,6 +648,7 @@ export class OrdersService {
     });
     this.realtime.emitToBranch(branchId, 'kot.updated', { orderId });
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'order.accepted',
       entity: 'Order',
@@ -820,6 +835,7 @@ export class OrdersService {
       declineIncoming?: boolean;
     },
   ) {
+        const restaurantId = await this.getRestaurantId(branchId);
     const reason = options.reason?.trim() || undefined;
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, branchId },
@@ -907,6 +923,7 @@ export class OrdersService {
     this.emitOrderWithdrawn(branchId, orderId, order.tableId);
 
     await this.audit.record({
+      restaurantId,
       userId,
       action: options.declineIncoming ? 'order.declined' : 'order.cancelled',
       entity: 'Order',
@@ -973,6 +990,7 @@ export class OrdersService {
       include: { items: true, payments: { select: { id: true } } },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     if (order.status !== 'OPEN') {
       throw new BadRequestException(
         order.status === 'PAID'
@@ -1002,6 +1020,7 @@ export class OrdersService {
     userId: string,
     dto: UpdateOrderDto,
   ) {
+        const restaurantId = await this.getRestaurantId(branchId);
     const order = await this.editableOrder(branchId, orderId);
 
     if (dto.customerId) {
@@ -1067,6 +1086,7 @@ export class OrdersService {
       }
     }
     await this.audit.record({
+      restaurantId,
       userId,
       action: moving ? 'order.table_changed' : 'order.edited',
       entity: 'Order',
@@ -1109,6 +1129,7 @@ export class OrdersService {
     userId: string,
     dto: UpdateOrderItemDto,
   ) {
+        const restaurantId = await this.getRestaurantId(branchId);
     const order = await this.editableOrder(branchId, orderId);
     const item = order.items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Item not found on this bill');
@@ -1135,6 +1156,7 @@ export class OrdersService {
     this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
     this.realtime.emitToBranch(branchId, 'kot.updated', { orderId });
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'order.item_changed',
       entity: 'Order',
@@ -1157,6 +1179,7 @@ export class OrdersService {
     userId: string,
     reason: string,
   ) {
+        const restaurantId = await this.getRestaurantId(branchId);
     const order = await this.editableOrder(branchId, orderId);
     const item = order.items.find((i) => i.id === itemId);
     if (!item) throw new NotFoundException('Item not found on this bill');
@@ -1186,6 +1209,7 @@ export class OrdersService {
     this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
     this.realtime.emitToBranch(branchId, 'kot.updated', { orderId });
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'order.item_removed',
       entity: 'Order',
@@ -1329,6 +1353,7 @@ export class OrdersService {
       include: { items: true, payments: true, customer: true },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     if (order.status === 'CANCELLED') {
       throw new BadRequestException('This order was cancelled');
     }
@@ -1421,7 +1446,9 @@ export class OrdersService {
   }
 
   async recordBillPrinted(branchId: string, orderId: string, userId: string) {
+    const restaurantId = await this.getRestaurantId(branchId);
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'order.bill_printed',
       entity: 'Order',
@@ -1441,6 +1468,7 @@ export class OrdersService {
       include: { items: true, customer: true, payments: true },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
 
     // A retry of an attempt that already went through gets that result back.
     if (dto.requestId) {
@@ -1701,6 +1729,7 @@ export class OrdersService {
           .join(', ')}`,
       );
       await this.audit.record({
+        restaurantId,
         userId,
         action: 'inventory.deduction_skipped',
         entity: 'Order',
@@ -1710,6 +1739,7 @@ export class OrdersService {
     }
 
     await this.audit.record({
+      restaurantId,
       userId,
       action: settlement.fullyPaid
         ? 'order.paid'
@@ -1804,6 +1834,7 @@ export class OrdersService {
       where: { id: orderId, branchId },
     });
     if (!order) throw new NotFoundException('Order not found');
+    const restaurantId = await this.getRestaurantId(branchId);
     if (order.status !== 'PAID') {
       throw new BadRequestException('Only a paid order can be refunded');
     }
@@ -1906,6 +1937,7 @@ export class OrdersService {
     this.realtime.emitToBranch(branchId, 'order.updated', { id: orderId });
 
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'order.refunded',
       entity: 'Order',
@@ -2258,6 +2290,7 @@ export class OrdersService {
     status: string,
     userId?: string,
   ) {
+        const restaurantId = await this.getRestaurantId(branchId);
     if (!(KOT_FORWARD_STATUSES as readonly string[]).includes(status)) {
       throw new BadRequestException(
         'A ticket can only move to accepted, preparing, ready or served - use reject to decline it',
@@ -2316,6 +2349,7 @@ export class OrdersService {
       id: kot.order.id,
     });
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'kot.status_changed',
       entity: 'Kot',
@@ -2376,6 +2410,7 @@ export class OrdersService {
       mayRejectStarted: boolean;
     },
   ) {
+        const restaurantId = await this.getRestaurantId(branchId);
     const reason = input.reason.trim();
     if (!reason) throw new BadRequestException('A reason is required');
     const kot = await this.prisma.kot.findFirst({
@@ -2495,6 +2530,7 @@ export class OrdersService {
       this.realtime.emitToBranch(branchId, 'order.updated', { id: order.id });
     }
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'kot.rejected',
       entity: 'Kot',

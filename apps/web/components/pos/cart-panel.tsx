@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomerPicker } from "@/components/pos/customer-picker";
+import type { Customer } from "@/hooks/use-customers";
 import type { CartLine } from "@/components/pos/cart-line";
 import type { RestaurantTable } from "@/hooks/use-tables";
 import { formatCurrency } from "@/lib/format";
@@ -45,6 +47,9 @@ export function CartPanel({
   onDeliveryChange,
   scheduledFor,
   onScheduledForChange,
+  branchId,
+  customer,
+  onCustomerChange,
 }: {
   lines: CartLine[];
   orderType: PosOrderType;
@@ -69,6 +74,9 @@ export function CartPanel({
   onDeliveryChange: (d: DeliveryDetails) => void;
   scheduledFor: string;
   onScheduledForChange: (v: string) => void;
+  branchId?: string | null;
+  customer?: Customer | null;
+  onCustomerChange?: (c: Customer | null) => void;
 }) {
   const subtotal = subtotalOf(lines.map((l) => l.unitPrice * l.quantity));
   const deliveryReady =
@@ -112,6 +120,26 @@ export function CartPanel({
             ))}
           </SelectContent>
         </Select>
+      )}
+
+      {orderType !== "DINE_IN" && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-muted-foreground">Customer (name / phone lookup)</label>
+          <CustomerPicker
+            branchId={branchId ?? null}
+            customer={customer ?? null}
+            onSelect={(c) => {
+              onCustomerChange?.(c);
+              if (c && orderType === "DELIVERY") {
+                onDeliveryChange({
+                  ...delivery,
+                  phone: c.phone ?? delivery.phone,
+                  address: c.address ?? delivery.address,
+                });
+              }
+            }}
+          />
+        </div>
       )}
 
       {orderType === "DELIVERY" && (

@@ -200,6 +200,7 @@ function PosPageInner() {
       {
         type: orderType,
         tableId: orderType === "DINE_IN" ? tableId : undefined,
+        customerId: activeCustomer?.id,
         ...(orderType === "DELIVERY" ? { delivery } : {}),
         ...(orderType !== "DINE_IN" && scheduledFor
           ? { scheduledFor: new Date(scheduledFor).toISOString() }
@@ -275,6 +276,8 @@ function PosPageInner() {
           <PosTablePicker
             floors={floors ?? []}
             onSelect={handleTablePick}
+            onSelectTakeaway={() => setOrderType("TAKEAWAY")}
+            onSelectDelivery={() => setOrderType("DELIVERY")}
             isLoading={floorsQuery.isLoading || branchLoading}
             error={floorsQuery.isError ? floorsQuery.error : null}
             onRetry={() => void floorsQuery.refetch()}
@@ -333,6 +336,9 @@ function PosPageInner() {
                 onDeliveryChange={setDelivery}
                 scheduledFor={scheduledFor}
                 onScheduledForChange={setScheduledFor}
+                branchId={branchId}
+                customer={activeCustomer}
+                onCustomerChange={setActiveCustomer}
               />
             )}
           </Card>

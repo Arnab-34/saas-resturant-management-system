@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChefHat,
   GitBranch,
   Gift,
@@ -64,7 +64,7 @@ const features = [
     icon: Plug,
     title: "API & MCP integrations",
     description:
-      "Connect an MCP client like Claude Desktop with your own permissions, or issue a scoped API key so your website can browse the menu, place orders, and book tables through OrderRestro directly.",
+      "Connect an MCP client like Claude Desktop with your own permissions, or issue a scoped API key so your website can browse the menu, place orders, and book tables through Astrikcoders POS directly.",
   },
 ];
 

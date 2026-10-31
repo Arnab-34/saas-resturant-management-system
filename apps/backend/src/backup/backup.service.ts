@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+﻿import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as fs from 'node:fs/promises';
@@ -344,7 +344,7 @@ export class BackupService {
       data: { triggeredById, status: 'PENDING' },
     });
     const workDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'orderrestro-backup-'),
+      path.join(os.tmpdir(), 'astrikcoders-backup-'),
     );
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const dbDumpPath = path.join(workDir, 'db.dump');
@@ -559,7 +559,7 @@ export class BackupService {
       entityId: 'local',
     });
     const workDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'orderrestro-export-'),
+      path.join(os.tmpdir(), 'astrikcoders-export-'),
     );
     try {
       const dbDumpPath = path.join(workDir, 'db.dump');
@@ -651,7 +651,7 @@ export class BackupService {
 
     const s3 = this.s3Client(config);
     const workDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'orderrestro-restore-'),
+      path.join(os.tmpdir(), 'astrikcoders-restore-'),
     );
     const dbDumpPath = path.join(workDir, 'db.dump');
     const uploadsArchivePath = path.join(workDir, 'uploads.tar.gz');
@@ -749,6 +749,12 @@ export class BackupService {
   // (shouldn't normally happen — registration always assigns one) is
   // skipped rather than failing the whole operation.
   private async notifyOwners(payload: NotifyPayload) {
+    // SaaS mode: cross-tenant owner notifications are disabled. Broadcasting a
+    // backup event to every OWNER across every restaurant would disclose
+    // one tenant's backup activity to unrelated tenants. The super admin
+    // notification channel (Phase 2) will replace this.
+    if (process.env.SAAS_MODE === 'true') return;
+
     const owners = await this.prisma.user.findMany({
       where: { role: { name: 'OWNER' }, isActive: true },
       select: {

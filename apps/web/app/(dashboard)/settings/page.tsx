@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ImagePlus, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -305,7 +305,7 @@ function GeneralSettingsForm({
                 </button>
               )}
               <p className="text-xs text-muted-foreground">
-                Shows in the app sidebar and login screen instead of the OrderRestro mark.
+                Shows in the app sidebar and login screen instead of the Astrikcoders mark.
                 Square, at least 256×256px, PNG with a transparent background works best.
               </p>
             </div>

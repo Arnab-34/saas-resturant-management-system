@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import { PermissionGuard } from "@/components/common/permission-guard";
 
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,7 +21,7 @@ import { ApiError } from "@/lib/api";
 
 const errMsg = (e: unknown, fallback: string) => (e instanceof ApiError ? e.message : fallback);
 
-export default function SyncSettingsPage() {
+function SyncSettingsPageInner() {
   const { data, isLoading } = useSyncStatus();
   const test = useTestSync();
   const enable = useEnableSync();
@@ -188,5 +189,13 @@ export default function SyncSettingsPage() {
         )}
       </Card>
     </div>
+  );
+}
+
+export default function SyncSettingsPage() {
+  return (
+    <PermissionGuard permission="settings.manage">
+      <SyncSettingsPageInner />
+    </PermissionGuard>
   );
 }

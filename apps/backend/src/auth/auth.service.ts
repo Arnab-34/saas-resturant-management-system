@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
@@ -147,6 +147,11 @@ export class AuthService {
   }
 
   async hasAnyRestaurant(): Promise<boolean> {
+    // In SaaS mode the landing page must never show the public signup flow -
+    // registration is gated behind super-admin provisioning. Returning true
+    // makes setup-status always report already set up, routing UI to login.
+    if (process.env.SAAS_MODE === 'true') return true;
+
     const restaurant = await this.prisma.restaurant.findFirst({
       select: { id: true },
     });
@@ -179,6 +184,81 @@ export class AuthService {
     return this.issueSession(user);
   }
 
+  // ---------------------------------------------------------------------------
+  // Invitation token flow (SaaS onboarding — Phase 3)
+  // ---------------------------------------------------------------------------
+
+  async getInvitation(token: string) {
+    const invitation = await this.prisma.tenantInvitation.findUnique({
+      where: { token },
+    });
+    if (!invitation) throw new BadRequestException('Invalid invitation link');
+    if (invitation.usedAt) throw new BadRequestException('This invitation has already been used');
+    if (invitation.expiresAt < new Date()) throw new BadRequestException('Invitation has expired');
+    return { email: invitation.email, restaurantId: invitation.restaurantId };
+  }
+
+  async setupTenantOwner(token: string, password: string) {
+    const invitation = await this.prisma.tenantInvitation.findUnique({
+      where: { token },
+      
+    });
+    if (!invitation || invitation.usedAt || invitation.expiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired invitation');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await this.prisma.$transaction(async (tx) => {
+      // Activate the placeholder owner user created during provisioning
+      await tx.user.updateMany({
+        where: { email: invitation.email, restaurantId: invitation.restaurantId ?? undefined },
+        data: { passwordHash, isActive: true },
+      });
+      // Mark invitation as used
+      await tx.tenantInvitation.update({
+        where: { id: invitation.id },
+        data: { usedAt: new Date() },
+      });
+      // Activate the tenant
+      if (invitation.restaurantId) {
+        await tx.restaurant.update({
+          where: { id: invitation.restaurantId },
+          data: { status: 'ACTIVE' },
+        });
+      }
+    });
+
+    // Issue session for the newly activated owner
+    const owner = await this.prisma.user.findFirst({
+      where: { email: invitation.email, restaurantId: invitation.restaurantId ?? undefined },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+      },
+    });
+    if (!owner) throw new BadRequestException('Owner account not found');
+    return this.issueSession(owner);
+  }
+
+  async exchangeImpersonationToken(token: string) {
+    // Verify the 15-min impersonation JWT issued by TenantsService.impersonate()
+    let payload: { sub: string; impersonatedBy: string; impersonation: boolean };
+    try {
+      payload = this.jwt.verify(token) as typeof payload;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired impersonation token');
+    }
+    if (!payload.impersonation) throw new UnauthorizedException('Not an impersonation token');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+      },
+    });
+    if (!user || !user.isActive) throw new UnauthorizedException('Target user not found');
+    return this.issueSession(user);
+  }
   private async issueSession(
     user: Parameters<AuthService['toSessionUser']>[0],
   ) {

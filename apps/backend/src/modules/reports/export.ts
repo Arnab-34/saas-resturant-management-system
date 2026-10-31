@@ -1,4 +1,4 @@
-import ExcelJS from 'exceljs';
+﻿import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { toCsv, type CsvValue } from './csv';
 import type { ReportResult } from './reports.service';
@@ -33,7 +33,7 @@ export async function buildXlsx(
   subtitle: string,
 ): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'NodeDR OrderRestro';
+  wb.creator = 'Astrikcoders';
   const ws = wb.addWorksheet(r.title.slice(0, 31));
   ws.addRow([r.title]).font = { bold: true, size: 14 };
   ws.addRow([subtitle]).font = { color: { argb: 'FF666666' } };

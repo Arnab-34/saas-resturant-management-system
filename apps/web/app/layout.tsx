@@ -14,12 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nodedr OrderRestro",
-  description: "Offline-first restaurant management system",
+  title: "Astrikcoders POS - Restaurant Management SaaS",
+  description: "Modern multi-tenant restaurant management and POS platform by Astrikcoders",
   manifest: "/manifest.json",
   icons: {
-    icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],
-    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    icon: [
+      { url: "/astrik-logo.png?v=3", type: "image/png" },
+      { url: "/icons/favicon-32.png?v=3", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico?v=3", sizes: "any" },
+    ],
+    shortcut: "/astrik-logo.png?v=3",
+    apple: [{ url: "/icons/icon-192.png?v=3", sizes: "192x192", type: "image/png" }],
   },
 };
 

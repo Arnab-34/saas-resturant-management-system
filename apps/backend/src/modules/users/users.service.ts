@@ -1,6 +1,7 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -48,6 +49,20 @@ export class UsersService {
     await this.assertRoleInRestaurant(restaurantId, dto.roleId);
     await this.assertBranchesInRestaurant(restaurantId, dto.branchIds);
 
+    // SaaS quota enforcement
+    if (process.env.SAAS_MODE === 'true') {
+      const restaurant = await this.prisma.restaurant.findUnique({
+        where: { id: restaurantId },
+        select: { maxStaff: true },
+      });
+      const count = await this.prisma.user.count({ where: { restaurantId } });
+      if (count >= (restaurant?.maxStaff ?? 10)) {
+        throw new ForbiddenException(
+          `Staff limit (${restaurant?.maxStaff ?? 10}) reached. Upgrade your plan to add more staff.`,
+        );
+      }
+    }
+
     if (dto.email) {
       const existing = await this.prisma.user.findFirst({
         where: { restaurantId, email: dto.email },
@@ -77,6 +92,7 @@ export class UsersService {
 
     await this.audit.record({
       userId: actorId,
+      restaurantId,
       action: 'staff.created',
       entity: 'User',
       entityId: user.id,
@@ -157,6 +173,7 @@ export class UsersService {
     // trail without the audit log becoming a secondary place secrets leak.
     await this.audit.record({
       userId: actorId,
+      restaurantId,
       action: 'staff.updated',
       entity: 'User',
       entityId: id,
@@ -221,6 +238,7 @@ export class UsersService {
 
     await this.audit.record({
       userId: actorId,
+      restaurantId,
       action: 'staff.deleted',
       entity: 'User',
       entityId: id,

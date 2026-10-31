@@ -1,4 +1,4 @@
-import { NestExpressApplication } from '@nestjs/platform-express';
+﻿import { NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
@@ -147,8 +147,8 @@ async function bootstrap() {
     process.env.ENABLE_SWAGGER === 'true'
   ) {
     const config = new DocumentBuilder()
-      .setTitle('Nodedr OrderRestro API')
-      .setDescription('REST API for the Nodedr OrderRestro management system')
+      .setTitle('Astrikcoders POS API')
+      .setDescription('REST API for the Astrikcoders restaurant management SaaS')
       .setVersion('1.0')
       .addCookieAuth('nodedr_session')
       .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'integration-key')
@@ -160,7 +160,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
   console.log(
-    `Nodedr OrderRestro API listening on :${port} (docs at /api/docs)`,
+    `Astrikcoders POS API listening on :${port} (docs at /api/docs)`,
   );
 }
 void bootstrap();

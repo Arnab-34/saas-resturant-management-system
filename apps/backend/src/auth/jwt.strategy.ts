@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+﻿import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { SessionUser } from '@nodedr-restaurant/types';
@@ -38,6 +38,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Session no longer valid');
+    }
+
+    // SaaS mode: block suspended / expired tenants on every request
+    if (process.env.SAAS_MODE === 'true') {
+      const restaurant = await this.prisma.restaurant.findUnique({
+        where: { id: user.restaurantId },
+        select: { status: true },
+      });
+      if (restaurant?.status === 'SUSPENDED') {
+        throw new ForbiddenException('Your account has been suspended. Contact support.');
+      }
+      if (restaurant?.status === 'EXPIRED' || restaurant?.status === 'CANCELLED') {
+        throw new ForbiddenException('Your subscription has expired. Contact support.');
+      }
     }
 
     return {

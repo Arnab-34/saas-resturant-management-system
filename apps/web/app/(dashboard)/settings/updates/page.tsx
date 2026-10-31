@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+import { PermissionGuard } from "@/components/common/permission-guard";
 
 import { useState } from "react";
 import { toast } from "sonner";
@@ -74,7 +75,7 @@ function pollUntilBackUp(onFailed: () => void) {
   }, 3000);
 }
 
-export default function UpdatesPage() {
+function UpdatesPageInner() {
   const { data, isLoading, refetch, isFetching } = useUpdateCheck();
   const applyUpdate = useApplyUpdate();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -197,5 +198,13 @@ export default function UpdatesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function UpdatesPage() {
+  return (
+    <PermissionGuard permission="system.update">
+      <UpdatesPageInner />
+    </PermissionGuard>
   );
 }

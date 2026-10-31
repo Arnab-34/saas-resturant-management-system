@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+﻿import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -43,6 +43,8 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { McpModule } from './mcp/mcp.module';
 import { SystemModule } from './system/system.module';
 import { VerifactuModule } from './modules/verifactu/verifactu.module';
+import { SaasRouteBlockMiddleware } from './common/middleware/saas-route-block.middleware';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 
 @Module({
   imports: [
@@ -86,6 +88,7 @@ import { VerifactuModule } from './modules/verifactu/verifactu.module';
     IntegrationsModule,
     McpModule,
     SystemModule,
+    SuperAdminModule,
   ],
   controllers: [AppController],
   providers: [
@@ -94,4 +97,12 @@ import { VerifactuModule } from './modules/verifactu/verifactu.module';
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Block tenant access to platform-only route groups in SaaS mode.
+    // The super admin's own endpoints live under /api/v1/super-admin/* (Phase 2).
+    consumer
+      .apply(SaasRouteBlockMiddleware)
+      .forRoutes('v1/backups', 'v1/system', 'v1/sync');
+  }
+}

@@ -12,6 +12,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+// ---------------------------------------------------------------------------
+// SaaS Platform — Super Admin, Tenant Lifecycle, Invitations
+// ---------------------------------------------------------------------------
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+
+enum SubscriptionTier {
+  STARTER       // 1 branch, 10 staff — default
+  PROFESSIONAL  // 5 branches, 50 staff
+  ENTERPRISE    // unlimited
+}
+
+/// Platform super-admin account — completely separate identity from any
+/// tenant user. Has no restaurantId; authenticated by its own JWT secret
+/// (SUPER_ADMIN_JWT_SECRET env var). Created once by the seed script.
+model SuperAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("super_admins")
+}
+
+/// Global platform configuration singleton (id is always "singleton").
+/// Super-admin editable via /super-admin/system.
+model PlatformConfig {
+  id               String  @id @default("singleton")
+  defaultTrialDays Int     @default(14)
+  /// QUERY_PARAM | SUBDOMAIN | BOTH
+  routingMode      String  @default("BOTH")
+  /// Leading-dot cookie domain for subdomain routing, e.g. ".yourdomain.com"
+  cookieDomain     String?
+  s3Bucket         String?
+  s3Region         String?
+  smtpConfigured   Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_config")
+}
+
+/// Single-use tenant invitation token — created by super admin, emailed to
+/// the future tenant owner. Expires after 72 h; marked usedAt once consumed.
+model TenantInvitation {
+  id           String    @id @default(cuid())
+  email        String
+  token        String    @unique @default(cuid())
+  restaurantId String?   // filled in after tenant owner completes setup
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([token])
+  @@map("tenant_invitations")
+}
 // ---------------------------------------------------------------------------
 // Tenancy / Branch
 // ---------------------------------------------------------------------------
@@ -73,6 +138,27 @@ model Restaurant {
   users              User[]
   integrationApiKeys IntegrationApiKey[]
   webhookEndpoints   WebhookEndpoint[]
+  auditLogs          AuditLog[]
+
+  // SaaS multi-tenant fields (added Phase 1)
+  /// URL-safe identifier used in login routing, e.g. "pizzapalace"
+  slug             String?          @unique
+  status           TenantStatus     @default(TRIAL)
+  subscriptionTier SubscriptionTier @default(STARTER)
+  /// When the free trial expires; null = not in trial
+  trialEndsAt      DateTime?
+  /// When the paid subscription expires; null = no expiry
+  expiresAt        DateTime?
+  /// Soft-delete timestamp; hard purge runs 30 days after this
+  cancelledAt      DateTime?
+  maxBranches      Int              @default(1)
+  maxStaff         Int              @default(10)
+  /// Primary billing/contact email for the tenant (may differ from owner login)
+  contactEmail     String?
+  /// Internal super-admin notes (not visible to tenant)
+  notes            String?
+  /// S3 key prefix for this tenant's uploads, e.g. "restaurants/<id>/"
+  s3Prefix         String?
 
   @@map("restaurants")
 }
@@ -357,6 +443,10 @@ model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Denormalized for fast per-tenant filtering and orphan-safety when a user
+  /// is deleted. Null = platform-level event (super-admin action).
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   action    String
   entity    String
   entityId  String?
@@ -364,6 +454,7 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([entity, entityId])
+  @@index([restaurantId, createdAt])
   @@map("audit_logs")
 }
 

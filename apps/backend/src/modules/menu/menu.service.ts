@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -32,6 +32,15 @@ export class MenuService {
     return this.prisma.menuCategory.create({ data: { ...dto, branchId } });
   }
 
+
+  // ─── SaaS helper ──────────────────────────────────────────────────────────
+  private async getRestaurantId(branchId: string): Promise<string> {
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: branchId },
+      select: { restaurantId: true },
+    });
+    return branch?.restaurantId ?? 'unknown';
+  }
   async updateCategory(
     branchId: string,
     id: string,
@@ -145,7 +154,9 @@ export class MenuService {
     // explicitly (before → after) in addition to the raw change set —
     // everything else in `rest` (name, availability, dietary flags, ...)
     // still shows up via `changes`.
+    const restaurantId = await this.getRestaurantId(branchId);
     await this.audit.record({
+      restaurantId,
       userId,
       action: 'menu_item.updated',
       entity: 'MenuItem',

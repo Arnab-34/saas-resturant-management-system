@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16-alpine
     container_name: nodedr-restaurant-postgres
@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: nodedr
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nodedr_dev_pw}
       POSTGRES_DB: nodedr_restaurant
-    # Not published to the host — only the backend needs it, over the
+    # Not published to the host â€” only the backend needs it, over the
     # internal Docker network. Uncomment `ports` below for local psql access.
     expose:
       - "5432"
@@ -37,6 +37,9 @@ services:
       DATABASE_URL: "postgresql://nodedr:${POSTGRES_PASSWORD:-nodedr_dev_pw}@postgres:5432/nodedr_restaurant"
       JWT_SECRET: ${JWT_SECRET:?set a real JWT_SECRET in .env for anything beyond local dev}
       JWT_EXPIRES_IN: "12h"
+      SAAS_MODE: "${SAAS_MODE:-true}"
+      SUPER_ADMIN_EMAIL: "${SUPER_ADMIN_EMAIL:-admin@astrikcoders.com}"
+      SUPER_ADMIN_JWT_SECRET: "${SUPER_ADMIN_JWT_SECRET}"
       PORT: "4000"
       CORS_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:1995}"
       COOKIE_SECURE: "${COOKIE_SECURE:-false}"
@@ -73,7 +76,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Not published to the host — reachable only via the web service's
+    # Not published to the host â€” reachable only via the web service's
     # server-side /api proxy, same reasoning as nodedr-pos (keeps the API
     # off the LAN, shrinks attack surface).
     expose:
@@ -85,21 +88,21 @@ services:
       # transport) needs the backend to see the host's USB device nodes.
       # Bind-mounting the whole /dev/bus/usb tree (not `devices:` with a
       # literal path, which only handles nodes that exist at container
-      # start — USB bus/device numbers are dynamic and can renumber on
+      # start â€” USB bus/device numbers are dynamic and can renumber on
       # reconnect) keeps this working across printer unplug/replug without
       # a restart.
       - /dev/bus/usb:/dev/bus/usb
     # Grants read/write/mknod WITHOUT full `privileged: true` on the two
     # device majors the printer needs, so the backend still can't see or
     # touch anything else on the host:
-    #   189 — usbfs (/dev/bus/usb/BBB/DDD), used by the libusb transport.
-    #   180 — usblp, the kernel printer driver behind /dev/usb/lp0 — the
+    #   189 â€” usbfs (/dev/bus/usb/BBB/DDD), used by the libusb transport.
+    #   180 â€” usblp, the kernel printer driver behind /dev/usb/lp0 â€” the
     #         PRIMARY transport (see escpos-usb.ts): the same node a
     #         working `echo > /dev/usb/lp0` writes to, and the one generic
     #         vendor-class 80mm printers only expose through the kernel.
     #         The 'm' (mknod) grant lets the backend create the lp node
     #         inside the container on demand and write straight through to
-    #         the host kernel's already-bound printer — no host bind mount,
+    #         the host kernel's already-bound printer â€” no host bind mount,
     #         so nothing fails at `compose up` when no printer is attached.
     device_cgroup_rules:
       - 'c 189:* rmw'
@@ -110,7 +113,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Next bakes rewrite destinations at BUILD time — this must be a
+        # Next bakes rewrite destinations at BUILD time â€” this must be a
         # build ARG, not a runtime env (see apps/web/Dockerfile comment).
         BACKEND_URL: "http://backend:4000"
     image: ghcr.io/raktim94/nodedr-restaurant-pos-web:${APP_VERSION:-dev}
@@ -122,7 +125,7 @@ services:
       - backend
 
   # One-click updates. A tiny sidecar (see updater/server.js) that does
-  # NOTHING on its own — no polling, no auto-update. When an admin presses
+  # NOTHING on its own â€” no polling, no auto-update. When an admin presses
   # Settings > Updates > "Update now", the backend tells it which published
   # version to move to; it pulls that exact version of the backend and web
   # images and recreates those two containers with the same settings (data

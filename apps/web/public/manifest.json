@@ -1,7 +1,7 @@
 {
-  "name": "Nodedr OrderRestro",
-  "short_name": "OrderRestro",
-  "description": "Offline-first restaurant management system — POS, tables, kitchen display, menu, inventory.",
+  "name": "Astrikcoders POS - Restaurant Management SaaS",
+  "short_name": "Astrikcoders POS",
+  "description": "Multi-tenant restaurant management system by Astrikcoders — POS, tables, kitchen display, menu, inventory.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

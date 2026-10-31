@@ -9,6 +9,7 @@ build/
 .env.*.local
 !.env.example
 data/
+uploads/
 *.log
 .DS_Store
 coverage/
